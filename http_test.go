@@ -2,10 +2,10 @@ package main
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
-	"net/http"
 	"io"
+	"net/http"
 	"net/http/httptest"
+	"testing"
 )
 
 func getUris(routes []*httpRoute) []string {

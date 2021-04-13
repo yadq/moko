@@ -12,7 +12,7 @@ func (s *mockServer) Init(cfgFile string) error {
 	return nil
 }
 
-func (s *mockServer) Serve() error{
+func (s *mockServer) Serve() error {
 	return nil
 }
 

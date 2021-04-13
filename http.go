@@ -17,8 +17,9 @@ import (
 //   - uri: /api
 //     method: GET
 //     response:
-//       contentType: plain/text
-//       data: hello world
+//       headers:
+//         Content-Type: plain/text
+//       body: hello world
 
 var (
 	defaultHTTPPort = 8181
@@ -37,8 +38,8 @@ type httpRoute struct {
 }
 
 type httpResponse struct {
-	ContentType string `yaml:"contentType"`
-	Data        string `yaml:"data"`
+	Headers map[string]string `yaml:"headers"`
+	Body    string            `yaml:"body"`
 }
 
 func newHttpServer() *HttpServer {
@@ -97,10 +98,10 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		// * delayed response
 		// * dynamic response data
 		// * chunked response
-		if response.ContentType != "" {
-			w.Header().Set("Content-Type", response.ContentType)
+		for k, v := range response.Headers {
+			w.Header().Set(k, v)
 		}
-		fmt.Fprint(w, response.Data)
+		fmt.Fprint(w, response.Body)
 	}
 }
 

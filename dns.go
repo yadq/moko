@@ -11,7 +11,7 @@ func newDNSServer() *DNSServer {
 	return &DNSServer{}
 }
 
-func (s *DNSServer) Init(cfgFile string) error{
+func (s *DNSServer) Init(cfgFile string) error {
 	// TODO
 	return nil
 }

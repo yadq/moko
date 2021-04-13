@@ -6,7 +6,6 @@ import (
 
 var ServerMap = serverMap{} // global server map
 
-
 type Server interface {
 	Init(cfgFile string) error
 	Serve() error

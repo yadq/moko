@@ -2,10 +2,13 @@ routes:
   - uri: /hello
     method: GET
     response:
-      contentType: plain/text
-      data: hello world
+      headers:
+        Content-Type: plain/text
+        trace-id: 12345
+      body: hello world
   - uri: /hello
     method: POST
     response:
-      contentType: application/json
-      data: '{"hello": "world"}'
+      headers:
+        Content-Type: application/json
+      body: '{"hello": "world"}'

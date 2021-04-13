@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"log"
+	"os"
 	"strings"
 )
 
