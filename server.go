@@ -8,7 +8,7 @@ var ServerMap = serverMap{} // global server map
 
 
 type Server interface {
-	Init(cfg string) error
+	Init(cfgFile string) error
 	Serve() error
 }
 

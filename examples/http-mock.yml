@@ -4,3 +4,8 @@ routes:
     response:
       contentType: plain/text
       data: hello world
+  - uri: /hello
+    method: POST
+    response:
+      contentType: application/json
+      data: '{"hello": "world"}'

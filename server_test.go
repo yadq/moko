@@ -8,7 +8,7 @@ import (
 
 type mockServer struct{}
 
-func (s *mockServer) Init(cfg string) error {
+func (s *mockServer) Init(cfgFile string) error {
 	return nil
 }
 

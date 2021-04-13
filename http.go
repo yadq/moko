@@ -44,8 +44,8 @@ func newHttpServer() *HttpServer {
 	return &HttpServer{router: httprouter.New()}
 }
 
-func (s *HttpServer) Init(cfg string) error {
-	data, err := ioutil.ReadFile(cfg)
+func (s *HttpServer) Init(cfgFile string) error {
+	data, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,11 @@ func (s *HttpServer) Serve() error {
 
 func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// TODO: handle status code, delayed response, chunked response and so on
+		// TODO: handle:
+		// * status code
+		// * delayed response
+		// * dynamic response data
+		// * chunked response
 		if response.ContentType != "" {
 			w.Header().Set("Content-Type", response.ContentType)
 		}
