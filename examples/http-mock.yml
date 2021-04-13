@@ -1,0 +1,6 @@
+routes:
+  - uri: /hello
+    method: GET
+    response:
+      contentType: plain/text
+      data: hello world
