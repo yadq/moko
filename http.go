@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // http-mock.yaml example
@@ -56,35 +57,37 @@ func (s *HttpServer) Init(cfgFile string) error {
 	if s.Port == 0 {
 		s.Port = defaultHTTPPort
 	}
+	// normalize route
+	for _, r := range s.Routes {
+		r.Method = strings.ToUpper(r.Method)
+	}
 
 	// init routes
-	for idx := range s.Routes {
-		rt := s.Routes[idx]
-		log.Printf("try to mock: %v %v\n", rt.Method, rt.Uri)
-		switch rt.Method {
-		case "GET":
-			s.router.GET(rt.Uri, uriHandler(rt.Response))
-		case "POST":
-			s.router.POST(rt.Uri, uriHandler(rt.Response))
-		case "HEAD":
-			s.router.HEAD(rt.Uri, uriHandler(rt.Response))
-		case "DELETE":
-			s.router.DELETE(rt.Uri, uriHandler(rt.Response))
-		case "PUT":
-			s.router.PUT(rt.Uri, uriHandler(rt.Response))
-		case "OPTIONS":
-			s.router.OPTIONS(rt.Uri, uriHandler(rt.Response))
-		default:
-			log.Printf("Unknown method %v", rt.Method)
-		}
-	}
+	s.initRoutes()
 
 	return nil
 }
 
-func (s *HttpServer) Serve() error {
-	log.Printf("start HTTP server on :%d\n", s.Port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), s.router)
+func (s *HttpServer) initRoutes() {
+	for _, r := range s.Routes {
+		log.Printf("try to mock: %v %v\n", r.Method, r.Uri)
+		switch r.Method {
+		case "GET":
+			s.router.GET(r.Uri, uriHandler(r.Response))
+		case "POST":
+			s.router.POST(r.Uri, uriHandler(r.Response))
+		case "HEAD":
+			s.router.HEAD(r.Uri, uriHandler(r.Response))
+		case "DELETE":
+			s.router.DELETE(r.Uri, uriHandler(r.Response))
+		case "PUT":
+			s.router.PUT(r.Uri, uriHandler(r.Response))
+		case "OPTIONS":
+			s.router.OPTIONS(r.Uri, uriHandler(r.Response))
+		default:
+			log.Printf("Unknown method %v", r.Method)
+		}
+	}
 }
 
 func uriHandler(response *httpResponse) httprouter.Handle {
@@ -99,6 +102,11 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		}
 		fmt.Fprint(w, response.Data)
 	}
+}
+
+func (s *HttpServer) Serve() error {
+	log.Printf("start HTTP server on :%d\n", s.Port)
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), s.router)
 }
 
 func init() {
