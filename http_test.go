@@ -40,4 +40,18 @@ func TestHTTPServer(t *testing.T) {
 		So(resp.Header.Get("Content-Type"), ShouldEqual, "plain/text")
 		So(string(body), ShouldEqual, "hello world")
 	})
+
+	Convey("mock POST static uri", t, func() {
+		req, _ := http.NewRequest("POST", "/hello", nil)
+		w := httptest.NewRecorder()
+		s.router.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		resp := w.Result()
+		body, _ := io.ReadAll(resp.Body)
+
+		So(resp.Header.Get("Content-Type"), ShouldEqual, "application/json")
+		So(string(body), ShouldEqual, "{\"hello\": \"world\"}")
+	})
 }
