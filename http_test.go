@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -83,7 +84,8 @@ func TestHTTPServer(t *testing.T) {
 	})
 
 	Convey("mock POST form-data dynamic uri", t, func() {
-		req, _ := http.NewRequest("POST", "/hello/world", nil)
+		req, _ := http.NewRequest("POST", "/hello/world", strings.NewReader("age=20"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 		s.router.ServeHTTP(w, req)
 
@@ -92,8 +94,7 @@ func TestHTTPServer(t *testing.T) {
 		resp := w.Result()
 		body, _ := io.ReadAll(resp.Body)
 
-		So(resp.Header.Get("trace-id"), ShouldEqual, "12345")
-		So(string(body), ShouldEqual, "hello world")
+		So(string(body), ShouldEqual, "{\"age\":\"20\",\"name\":\"world\"}")
 	})
 
 	Convey("mock POST json dynamic uri", t, func() {

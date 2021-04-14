@@ -130,14 +130,14 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		w.WriteHeader(response.Code)
 		// render path variable
 		for _, p := range ps {
-			bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("{%s}", p.Key), p.Value)
+			bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", p.Key), p.Value)
 		}
-		// render query variable
-		qs := r.URL.Query()
-		for qk := range qs {
-			bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("{%s}", qk), qs.Get(qk))
+		// render URL query and form-data
+		if err := r.ParseForm(); err == nil {
+			for qk := range r.Form {
+				bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", qk), r.Form.Get(qk))
+			}
 		}
-		// TODO: render form-data
 		// TODO: render json data
 		fmt.Fprint(w, bodyString)
 	}

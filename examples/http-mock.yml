@@ -18,13 +18,13 @@ routes:
     response:
       headers:
         trace-id: 12345
-      body: hello {name}
+      body: hello ${name}
   - uri: /hello/:name
     method: POST
     response:
       body:
-        name: {name}
-        age: {age}
+        name: ${name}
+        age: ${age}
   - uri: /user/:age
     response:
-      body: user {name} {age}
+      body: user ${name} ${age}
