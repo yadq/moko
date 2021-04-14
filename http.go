@@ -22,8 +22,10 @@ import (
 //         Content-Type: plain/text
 //       body: hello world
 
-var (
-	defaultHTTPPort = 8181
+const (
+	defaultHTTPPort   = 8181
+	defaultHTTPMethod = "GET"
+	defaultHTTPCode   = 200
 )
 
 type HttpServer struct {
@@ -39,6 +41,7 @@ type httpRoute struct {
 }
 
 type httpResponse struct {
+	Code    int               `yaml:"code"`
 	Headers map[string]string `yaml:"headers"`
 	Body    interface{}       `yaml:"body"`
 }
@@ -63,7 +66,10 @@ func (s *HttpServer) Init(cfgFile string) error {
 	for _, r := range s.Routes {
 		r.Method = strings.ToUpper(r.Method)
 		if r.Method == "" {
-			r.Method = "GET"
+			r.Method = defaultHTTPMethod
+		}
+		if r.Response.Code == 0 {
+			r.Response.Code = defaultHTTPCode
 		}
 	}
 
@@ -98,9 +104,8 @@ func (s *HttpServer) initRoutes() {
 func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// TODO: handle:
-		// * status code
-		// * delayed response
 		// * dynamic response data
+		// * delayed response
 		// * chunked response
 		for k, v := range response.Headers {
 			w.Header().Set(k, v)
@@ -109,11 +114,13 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		if reflect.TypeOf(response.Body).Kind() != reflect.String {
 			if jsonBytes, err := MarshalJSON(response.Body); err == nil {
 				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(response.Code)
 				w.Write(jsonBytes)
 				return
 			}
 		}
 		// raw string
+		w.WriteHeader(response.Code)
 		fmt.Fprint(w, response.Body)
 	}
 }

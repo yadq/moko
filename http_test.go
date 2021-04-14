@@ -32,7 +32,7 @@ func TestHTTPServer(t *testing.T) {
 		w := httptest.NewRecorder()
 		s.router.ServeHTTP(w, req)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Code, ShouldEqual, 201)
 
 		resp := w.Result()
 		body, _ := io.ReadAll(resp.Body)

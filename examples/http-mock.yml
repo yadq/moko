@@ -1,6 +1,7 @@
 routes:
   - uri: /hello
     response:
+      code: 201
       headers:
         Content-Type: text/plain
         trace-id: 12345
@@ -8,7 +9,11 @@ routes:
   - uri: /hello
     method: POST
     response:
+      code: 200
       body:
         hello: world
         another:
           sub: subvalue
+  - uri: /hello/:name
+    response:
+      body: hello {name}
