@@ -54,4 +54,49 @@ func TestHTTPServer(t *testing.T) {
 		So(resp.Header.Get("Content-Type"), ShouldEqual, "application/json")
 		So(string(body), ShouldEqual, "{\"another\":{\"sub\":\"subvalue\"},\"hello\":\"world\"}")
 	})
+
+	Convey("mock GET dynamic uri", t, func() {
+		req, _ := http.NewRequest("GET", "/hello/world", nil)
+		w := httptest.NewRecorder()
+		s.router.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		resp := w.Result()
+		body, _ := io.ReadAll(resp.Body)
+
+		So(resp.Header.Get("trace-id"), ShouldEqual, "12345")
+		So(string(body), ShouldEqual, "hello world")
+	})
+
+	Convey("mock GET dynamic uri with parameters", t, func() {
+		req, _ := http.NewRequest("GET", "/user/20?name=world", nil)
+		w := httptest.NewRecorder()
+		s.router.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		resp := w.Result()
+		body, _ := io.ReadAll(resp.Body)
+
+		So(string(body), ShouldEqual, "user world 20")
+	})
+
+	Convey("mock POST form-data dynamic uri", t, func() {
+		req, _ := http.NewRequest("POST", "/hello/world", nil)
+		w := httptest.NewRecorder()
+		s.router.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		resp := w.Result()
+		body, _ := io.ReadAll(resp.Body)
+
+		So(resp.Header.Get("trace-id"), ShouldEqual, "12345")
+		So(string(body), ShouldEqual, "hello world")
+	})
+
+	Convey("mock POST json dynamic uri", t, func() {
+		// TODO
+	})
 }

@@ -16,4 +16,15 @@ routes:
           sub: subvalue
   - uri: /hello/:name
     response:
+      headers:
+        trace-id: 12345
       body: hello {name}
+  - uri: /hello/:name
+    method: POST
+    response:
+      body:
+        name: {name}
+        age: {age}
+  - uri: /user/:age
+    response:
+      body: user {name} {age}

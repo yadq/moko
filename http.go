@@ -110,18 +110,36 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		for k, v := range response.Headers {
 			w.Header().Set(k, v)
 		}
-		// support json string
-		if reflect.TypeOf(response.Body).Kind() != reflect.String {
-			if jsonBytes, err := MarshalJSON(response.Body); err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(response.Code)
-				w.Write(jsonBytes)
-				return
+
+		var bodyString string
+
+		// json response
+		switch reflect.TypeOf(response.Body).Kind() {
+		case reflect.String: // text
+			bodyString = response.Body.(string)
+		default: // json
+			w.Header().Set("Content-Type", "application/json")
+			jsonBytes, err := MarshalJSON(response.Body)
+			if err == nil {
+				bodyString = string(jsonBytes)
+			} else {
+				bodyString = err.Error()
 			}
 		}
-		// raw string
+
 		w.WriteHeader(response.Code)
-		fmt.Fprint(w, response.Body)
+		// render path variable
+		for _, p := range ps {
+			bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("{%s}", p.Key), p.Value)
+		}
+		// render query variable
+		qs := r.URL.Query()
+		for qk := range qs {
+			bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("{%s}", qk), qs.Get(qk))
+		}
+		// TODO: render form-data
+		// TODO: render json data
+		fmt.Fprint(w, bodyString)
 	}
 }
 
