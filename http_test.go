@@ -52,6 +52,6 @@ func TestHTTPServer(t *testing.T) {
 		body, _ := io.ReadAll(resp.Body)
 
 		So(resp.Header.Get("Content-Type"), ShouldEqual, "application/json")
-		So(string(body), ShouldEqual, "{\"hello\": \"world\"}")
+		So(string(body), ShouldEqual, "{\"another\":{\"sub\":\"subvalue\"},\"hello\":\"world\"}")
 	})
 }

@@ -11,4 +11,7 @@ routes:
     response:
       headers:
         Content-Type: application/json
-      body: '{"hello": "world"}'
+      body:
+        hello: world
+        another:
+          sub: subvalue

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -39,7 +40,7 @@ type httpRoute struct {
 
 type httpResponse struct {
 	Headers map[string]string `yaml:"headers"`
-	Body    string            `yaml:"body"`
+	Body    interface{}       `yaml:"body"`
 }
 
 func newHttpServer() *HttpServer {
@@ -101,6 +102,14 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		for k, v := range response.Headers {
 			w.Header().Set(k, v)
 		}
+		// support json string
+		if reflect.TypeOf(response.Body).Kind() != reflect.String {
+			if jsonBytes, err := MarshalJSON(response.Body); err == nil {
+				fmt.Fprint(w, string(jsonBytes))
+				return
+			}
+		}
+		// raw string
 		fmt.Fprint(w, response.Body)
 	}
 }
