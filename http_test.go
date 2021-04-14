@@ -37,7 +37,7 @@ func TestHTTPServer(t *testing.T) {
 		resp := w.Result()
 		body, _ := io.ReadAll(resp.Body)
 
-		So(resp.Header.Get("Content-Type"), ShouldEqual, "plain/text")
+		So(resp.Header.Get("Content-Type"), ShouldEqual, "text/plain")
 		So(string(body), ShouldEqual, "hello world")
 	})
 

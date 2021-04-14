@@ -62,6 +62,9 @@ func (s *HttpServer) Init(cfgFile string) error {
 	// normalize route
 	for _, r := range s.Routes {
 		r.Method = strings.ToUpper(r.Method)
+		if r.Method == "" {
+			r.Method = "GET"
+		}
 	}
 
 	// init routes
@@ -105,7 +108,8 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		// support json string
 		if reflect.TypeOf(response.Body).Kind() != reflect.String {
 			if jsonBytes, err := MarshalJSON(response.Body); err == nil {
-				fmt.Fprint(w, string(jsonBytes))
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(jsonBytes)
 				return
 			}
 		}
