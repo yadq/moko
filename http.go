@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/yaml.v2"
@@ -9,6 +11,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"text/template"
 )
 
 // http-mock.yaml example
@@ -104,7 +107,6 @@ func (s *HttpServer) initRoutes() {
 func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// TODO: handle:
-		// * dynamic response data
 		// * delayed response
 		// * chunked response
 		for k, v := range response.Headers {
@@ -120,34 +122,63 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		default: // json
 			w.Header().Set("Content-Type", "application/json")
 			jsonBytes, err := MarshalJSON(response.Body)
-			if err == nil {
+			if err != nil {
 				bodyString = string(jsonBytes)
-			} else {
-				bodyString = err.Error()
+				log.Printf("marshal response json error: %v\n", err)
+				fmt.Fprint(w, err.Error())
+				return
 			}
+			bodyString = string(jsonBytes)
 		}
 
 		// write status code
 		w.WriteHeader(response.Code)
-		// render template: ${...} => {...}, then render as go template
-		if strings.ContainsRune(bodyString, '$') {
-			// render path variable
-			for _, p := range ps {
-				bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", p.Key), p.Value)
-			}
-			// render URL query and form-data
-			if err := r.ParseForm(); err == nil {
-				for qk := range r.Form {
-					bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", qk), r.Form.Get(qk))
-				}
-			}
-			// render json data
-			if r.Header.Get("Content-Type") == "application/json" {
-				// TODO
-			}
+		// render template
+		renderedBody, err := renderResponseBody(bodyString, r, ps)
+		if err != nil {
+			log.Printf("render response template error: %v\n", err)
+			fmt.Fprint(w, bodyString)
+			return
 		}
-		fmt.Fprint(w, bodyString)
+		fmt.Fprint(w, renderedBody)
 	}
+}
+
+func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (string, error) {
+	if !strings.ContainsAny(body, "${") {
+		return body, nil
+	}
+
+	body = strings.ReplaceAll(body, "${", "{") // ${...} => {...}
+	params := make(map[string]interface{})
+	// render path variable
+	for _, p := range ps {
+		params[p.Key] = p.Value
+	}
+	// parse URL query and form-data
+	if err := r.ParseForm(); err != nil {
+		return body, err
+	}
+	for qk := range r.Form {
+		params[qk] = r.Form.Get(qk)
+	}
+	// parse json data
+	if r.Header.Get("Content-Type") == "application/json" {
+		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+			return body, err
+		}
+	}
+	// render template
+	tpl, err := template.New("response").Parse(body)
+	if err != nil {
+		return body, err
+	}
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, params); err != nil {
+		return body, err
+	}
+
+	return buf.String(), nil
 }
 
 func (s *HttpServer) Serve() error {
