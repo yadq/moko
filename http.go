@@ -145,11 +145,10 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 }
 
 func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (string, error) {
-	if !strings.ContainsAny(body, "${") {
+	if !strings.ContainsRune(body, '{') {
 		return body, nil
 	}
 
-	body = strings.ReplaceAll(body, "${", "{") // ${...} => {...}
 	params := make(map[string]interface{})
 	// render path variable
 	for _, p := range ps {
