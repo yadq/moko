@@ -11,8 +11,8 @@ import (
 
 func getUris(routes []*httpRoute) []string {
 	uris := make([]string, len(routes))
-	for idx := range routes {
-		uris[idx] = routes[idx].Uri
+	for idx, r := range routes {
+		uris[idx] = strings.Join([]string{r.Method, r.Uri}, " ")
 	}
 
 	return uris
@@ -36,7 +36,11 @@ func TestHTTPServer(t *testing.T) {
 	Convey("parse cfg file", t, func() {
 		So(s.Port, ShouldEqual, defaultHTTPPort)
 		uris := getUris(s.Routes)
-		So(uris, ShouldContain, "/hello")
+		So(uris, ShouldContain, "GET /hello")
+		So(uris, ShouldContain, "POST /hello")
+		So(uris, ShouldContain, "GET /hello/:name")
+		So(uris, ShouldContain, "POST /hello/form/:name")
+		So(uris, ShouldContain, "POST /hello/json/:name")
 	})
 
 	Convey("mock GET static uri", t, func() {
