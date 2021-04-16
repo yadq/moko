@@ -81,7 +81,7 @@ func (s *HttpServer) Init(cfgFile string) error {
 
 func (s *HttpServer) initRoutes() {
 	for _, r := range s.Routes {
-		log.Printf("try to mock: %v %v\n", r.Method, r.Uri)
+		log.Printf("add mock API: %v %v\n", r.Method, r.Uri)
 		switch r.Method {
 		case "GET":
 			s.router.GET(r.Uri, uriHandler(r.Response))
@@ -96,7 +96,7 @@ func (s *HttpServer) initRoutes() {
 		case "OPTIONS":
 			s.router.OPTIONS(r.Uri, uriHandler(r.Response))
 		default:
-			log.Printf("Unknown method %v", r.Method)
+			log.Printf("Unsupported method %v", r.Method)
 		}
 	}
 }
@@ -127,18 +127,25 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 			}
 		}
 
+		// write status code
 		w.WriteHeader(response.Code)
-		// render path variable
-		for _, p := range ps {
-			bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", p.Key), p.Value)
-		}
-		// render URL query and form-data
-		if err := r.ParseForm(); err == nil {
-			for qk := range r.Form {
-				bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", qk), r.Form.Get(qk))
+		// render template: ${...} => {...}, then render as go template
+		if strings.ContainsRune(bodyString, '$') {
+			// render path variable
+			for _, p := range ps {
+				bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", p.Key), p.Value)
+			}
+			// render URL query and form-data
+			if err := r.ParseForm(); err == nil {
+				for qk := range r.Form {
+					bodyString = strings.ReplaceAll(bodyString, fmt.Sprintf("${%s}", qk), r.Form.Get(qk))
+				}
+			}
+			// render json data
+			if r.Header.Get("Content-Type") == "application/json" {
+				// TODO
 			}
 		}
-		// TODO: render json data
 		fmt.Fprint(w, bodyString)
 	}
 }
