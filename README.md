@@ -2,6 +2,6 @@
 
 ## Introduction
 
-1. build moko binary: `make build`
-1. run with sample http configuration: `./moko -protocol http -cfg examples/http-mock.yml`
-1. visit mock API: `curl -v http://127.0.0.1:8181/hello`
+1. Download moko binary from [release](//github.com/yadq/moko/releases) page.
+1. Refer to [http example](/github.com/yadq/moko/blob/master/examples/http-mock.yml), prepare a configuration file.
+1. Execute moko: `./moko -protocol http -cfg http-mock.cfg.yml`
