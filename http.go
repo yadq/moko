@@ -106,9 +106,6 @@ func (s *HttpServer) initRoutes() {
 
 func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// TODO: handle:
-		// * delayed response
-		// * chunked response
 		for k, v := range response.Headers {
 			w.Header().Set(k, v)
 		}
