@@ -10,7 +10,8 @@
 
 General:
 
-* [ ] Support capturing protocol data
+* [ ] Support reload configuration file on fly.
+* [ ] Support capturing protocol data.
 
 HTTP protocol:
 
@@ -23,10 +24,10 @@ HTTP protocol:
 
 DNS protocol:
 
-* [ ] Support A record with one to multiple records
-* [ ] Support CNAME record
+* [ ] Support A record with one to multiple records.
+* [ ] Support CNAME record.
 
 gRPC protocol
 
-* [ ] Support unary method
-* [ ] Support streaming method
+* [ ] Support unary method.
+* [ ] Support streaming method.
