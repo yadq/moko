@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"text/template"
+
+	"github.com/julienschmidt/httprouter"
+	"gopkg.in/yaml.v2"
 )
 
 // http-mock.yaml example
@@ -32,9 +34,11 @@ const (
 )
 
 type HttpServer struct {
-	Port   int          `yaml:"port"`
-	Routes []*httpRoute `yaml:"routes"`
-	router *httprouter.Router
+	Port     int          `yaml:"port"`
+	CertFile string       `yaml:"cert"`
+	KeyFile  string       `yaml:"key"`
+	Routes   []*httpRoute `yaml:"routes"`
+	router   *httprouter.Router
 }
 
 type httpRoute struct {
@@ -60,6 +64,18 @@ func (s *HttpServer) Init(cfgFile string) error {
 	}
 	if err := yaml.Unmarshal(data, s); err != nil {
 		return err
+	}
+
+	if s.CertFile != "" {
+		if _, err := os.Stat(s.CertFile); os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if s.KeyFile != "" {
+		if _, err := os.Stat(s.KeyFile); os.IsNotExist(err) {
+			return err
+		}
 	}
 
 	if s.Port == 0 {
@@ -178,8 +194,15 @@ func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (str
 }
 
 func (s *HttpServer) Serve() error {
+	addr := fmt.Sprintf(":%d", s.Port)
+
+	if s.CertFile != "" && s.KeyFile != "" {
+		log.Printf("with cert and key file configured, start HTTPS server on :%d\n", s.Port)
+		return http.ListenAndServeTLS(addr, s.CertFile, s.KeyFile, s.router)
+	}
+
 	log.Printf("start HTTP server on :%d\n", s.Port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), s.router)
+	return http.ListenAndServe(addr, s.router)
 }
 
 func init() {

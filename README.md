@@ -19,8 +19,8 @@ HTTP protocol:
 * [ ] Implement `oneof` keyword in response, that support random or weighted response.
 * [ ] Support simulate delayed response.
 * [ ] Support streaming response.
-* [ ] Support HTTPS protocol.
-* [ ] Support HTTP/2 protocol.
+* [x] Support HTTPS protocol.
+* [x] Support HTTP/2 protocol.
 
 DNS protocol:
 

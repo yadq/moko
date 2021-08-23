@@ -32,4 +32,6 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Fatal(server.Serve())
+
+	// TODO: watch cfg file and reload server
 }

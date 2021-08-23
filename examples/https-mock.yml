@@ -1,0 +1,23 @@
+cert: examples/cert.pem
+key: examples/key.pem
+routes:
+  - uri: /hello
+    response:
+      code: 201
+      headers:
+        Content-Type: text/plain
+        trace-id: 12345
+      body: hello world
+  - uri: /hello
+    method: POST
+    response:
+      code: 200
+      body:
+        hello: world
+        another:
+          sub: subvalue
+  - uri: /hello/:name
+    response:
+      headers:
+        trace-id: 12345
+      body: hello {{.name}}

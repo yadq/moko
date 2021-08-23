@@ -1,12 +1,13 @@
 package main
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func getUris(routes []*httpRoute) []string {
@@ -86,5 +87,29 @@ func TestHTTPServer(t *testing.T) {
 		So(resp.StatusCode, ShouldEqual, 200)
 		body, _ := io.ReadAll(resp.Body)
 		So(string(body), ShouldEqual, "{\"age\":\"20\",\"location\":{\"city\":\"hangzhou\"},\"name\":\"world\"}")
+	})
+}
+
+func TestHTTPSServer(t *testing.T) {
+	s := newHttpServer()
+	s.Init("examples/https-mock.yml")
+
+	Convey("parse cfg file", t, func() {
+		So(s.Port, ShouldEqual, defaultHTTPPort)
+		uris := getUris(s.Routes)
+		So(uris, ShouldContain, "GET /hello")
+		So(uris, ShouldContain, "POST /hello")
+		So(uris, ShouldContain, "GET /hello/:name")
+	})
+
+	Convey("mock GET static uri", t, func() {
+		req, _ := http.NewRequest("GET", "/hello", nil)
+		w := httptest.NewRecorder()
+		s.router.ServeHTTP(w, req)
+		resp := w.Result()
+		So(resp.StatusCode, ShouldEqual, 201)
+		So(resp.Header.Get("Content-Type"), ShouldEqual, "text/plain")
+		body, _ := io.ReadAll(resp.Body)
+		So(string(body), ShouldEqual, "hello world")
 	})
 }
