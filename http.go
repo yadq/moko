@@ -100,7 +100,7 @@ func (s *HttpServer) Init(cfgFile string) error {
 
 func (s *HttpServer) initRoutes() {
 	for _, r := range s.Routes {
-		log.Printf("add mock API: %v %v\n", r.Method, r.Uri)
+		log.Printf("add mock HTTP API: %v %v\n", r.Method, r.Uri)
 		switch r.Method {
 		case "GET":
 			s.router.GET(r.Uri, uriHandler(r.Response))
