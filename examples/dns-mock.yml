@@ -1,9 +1,9 @@
 protocol: udp4
-port: 53
-parent: 223.5.5.5  # aliyun public DNS
+port: 2053
+parent: 114.114.114.114:53
 routes:
   - rrtype: A
-    fqdn: www.my.internal
+    fqdn: www.my.internal.
     ip: 127.0.0.1,127.0.0.2
     ttl: 120
   - rrtype: A

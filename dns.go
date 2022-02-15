@@ -17,7 +17,7 @@ import (
 const (
 	defaultDNSPort     = 53
 	defaultDNSProtocol = "udp4"
-	defaultParentDNS   = "223.5.5.5" // aliyun public DNS
+	defaultParentDNS   = "223.5.5.5:53" // aliyun public DNS
 )
 
 var dnsClient = &dns.Client{Net: "udp"}
@@ -47,19 +47,19 @@ func (c dnsMap) Set(dnsType uint16, key string, value []dns.RR) {
 }
 
 type DNSServer struct {
-	Protocol  string    `json:"protocol"`
-	Port      int       `json:"port"`
-	ParentDNS string    `json:"parentdns"`
-	Routes    []*Record `json:"routes"`
+	Protocol  string    `yaml:"protocol"`
+	Port      int       `yaml:"port"`
+	ParentDNS string    `yaml:"parent"`
+	Routes    []*Record `yaml:"routes"`
 	server    *dns.Server
 	m         dnsMap
 }
 
 type Record struct {
-	Rrtype string `json:"rrtype"`
-	Fqdn   string `json:"fqdn"`
-	Ip     string `json:"ip"`
-	Ttl    uint32 `json:"ttl"`
+	Rrtype string `yaml:"rrtype"`
+	Fqdn   string `yaml:"fqdn"`
+	Ip     string `yaml:"ip"`
+	Ttl    uint32 `yaml:"ttl"`
 }
 
 func newDNSServer() *DNSServer {
@@ -76,15 +76,16 @@ func (s *DNSServer) Init(cfgFile string) error {
 	}
 
 	if s.Protocol == "" {
-		log.Println("protocol is not set, use default protocol: ", defaultDNSProtocol)
+		log.Println("protocol is not set, use default protocol:", defaultDNSProtocol)
 		s.Protocol = defaultDNSProtocol
 	}
 	if s.Port == 0 {
-		log.Println("port is not set, use default port: ", defaultDNSPort)
+		log.Println("port is not set, use default port:", defaultDNSPort)
 		s.Port = defaultDNSPort
 	}
 	if s.ParentDNS == "" {
-		log.Println("parentdns is not set, use default parent: ", defaultParentDNS)
+		log.Println("parentdns is not set, use default parent:", defaultParentDNS)
+		s.ParentDNS = defaultParentDNS
 	}
 	s.server = &dns.Server{Addr: fmt.Sprintf(":%d", s.Port), Net: s.Protocol}
 
@@ -96,7 +97,10 @@ func (s *DNSServer) Init(cfgFile string) error {
 
 func (s *DNSServer) initRoutes() {
 	for _, r := range s.Routes {
-		log.Println("add mock DNS: ", r.Rrtype, r.Fqdn)
+		if !strings.HasSuffix(r.Fqdn, ".") {
+			r.Fqdn += "."
+		}
+		log.Println("add mock DNS:", r.Rrtype, r.Fqdn)
 		switch r.Rrtype {
 		case "A":
 			ips := strings.Split(r.Ip, ",")
@@ -104,7 +108,7 @@ func (s *DNSServer) initRoutes() {
 			for idx, ip := range ips {
 				realIp := net.ParseIP(ip)
 				if realIp == nil {
-					log.Fatalln("invalid ip addr: ", ip)
+					log.Fatalln("invalid ip addr:", ip)
 				}
 				rrs[idx] = &dns.A{
 					Hdr: dns.RR_Header{
@@ -130,7 +134,7 @@ func (s *DNSServer) Serve() error {
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		rrs, err := s.m.Get(r.Question[0].Qtype, r.Question[0].Name)
 		if err != nil {
-			log.Println("handle request error: ", r, err)
+			log.Println("handle request error:", r, err)
 			log.Printf("forward request %s to parent DNS\n", r.Question[0].Name)
 			resp, _, err := dnsClient.Exchange(r, s.ParentDNS)
 			if err != nil {
@@ -139,7 +143,7 @@ func (s *DNSServer) Serve() error {
 				return
 			}
 			if err = w.WriteMsg(resp); err != nil {
-				log.Println("write response msg error: ", err)
+				log.Println("write response msg error:", err)
 			}
 			return
 		}
