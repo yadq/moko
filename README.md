@@ -24,7 +24,7 @@ HTTP protocol:
 
 DNS protocol:
 
-* [ ] Support A record with one to multiple records.
+* [x] Support A record with one to multiple records.
 * [ ] Support CNAME record.
 
 gRPC protocol

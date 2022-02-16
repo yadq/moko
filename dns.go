@@ -97,6 +97,7 @@ func (s *DNSServer) Init(cfgFile string) error {
 
 func (s *DNSServer) initRoutes() {
 	for _, r := range s.Routes {
+		// add "." as suffix of FQDN
 		if !strings.HasSuffix(r.Fqdn, ".") {
 			r.Fqdn += "."
 		}
