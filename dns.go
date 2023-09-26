@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -67,7 +67,7 @@ func newDNSServer() *DNSServer {
 }
 
 func (s *DNSServer) Init(cfgFile string) error {
-	data, err := ioutil.ReadFile(cfgFile)
+	data, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return err
 	}

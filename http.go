@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -58,7 +57,7 @@ func newHttpServer() *HttpServer {
 }
 
 func (s *HttpServer) Init(cfgFile string) error {
-	data, err := ioutil.ReadFile(cfgFile)
+	data, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return err
 	}
