@@ -36,11 +36,9 @@ routes:
         age: "{{.age}}"
         location:
           city: "{{.location.city}}"
-  - uri: /ads/app/web/yaml/receiveInfo
-    method: POST
+  - uri: /delay
+    method: GET
     response:
+      delay: 1
       body:
-        code: "0000"
-        content: "处理成功"
         success: true
-        transactionCode: "123456"

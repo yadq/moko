@@ -17,14 +17,14 @@ General:
 
 HTTP protocol:
 
+* [x] Support HTTPS protocol.
+* [x] Support HTTP/2 protocol.
+* [x] Support simulate delayed response.
 * [ ] Support mock cfg for specified Host.
 * [ ] Add special header to mock response, eg. "mock-by: moko"
 * [ ] Implement `request` keyword, that support advanced route based on header, cookie etc.
 * [ ] Implement `oneof` keyword in response, that support random or weighted response.
-* [ ] Support simulate delayed response.
 * [ ] Support streaming response.
-* [x] Support HTTPS protocol.
-* [x] Support HTTP/2 protocol.
 
 DNS protocol:
 

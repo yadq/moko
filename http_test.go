@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -25,8 +26,10 @@ func TestHTTPServer(t *testing.T) {
 
 	doHTTPRequest := func(method string, uri string, data io.Reader, headers map[string]string) *http.Response {
 		req, _ := http.NewRequest(method, uri, data)
-		for k, v := range headers {
-			req.Header.Set(k, v)
+		if headers != nil {
+			for k, v := range headers {
+				req.Header.Set(k, v)
+			}
 		}
 		w := httptest.NewRecorder()
 		s.router.ServeHTTP(w, req)
@@ -87,6 +90,16 @@ func TestHTTPServer(t *testing.T) {
 		So(resp.StatusCode, ShouldEqual, 200)
 		body, _ := io.ReadAll(resp.Body)
 		So(string(body), ShouldEqual, "{\"age\":\"20\",\"location\":{\"city\":\"hangzhou\"},\"name\":\"world\"}")
+	})
+
+	Convey("mock get delay response", t, func() {
+		start := time.Now()
+		resp := doHTTPRequest("GET", "/delay", nil, nil)
+		duration := time.Since(start)
+		So(duration.Milliseconds(), ShouldBeGreaterThanOrEqualTo, 1)
+		So(resp.StatusCode, ShouldEqual, 200)
+		body, _ := io.ReadAll(resp.Body)
+		So(string(body), ShouldEqual, "{\"success\":true}")
 	})
 }
 

@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/yaml.v2"
@@ -48,6 +49,7 @@ type httpRoute struct {
 
 type httpResponse struct {
 	Code    int               `yaml:"code"`
+	Delay   int               `yaml:"delay"` // delay in milliseconds
 	Headers map[string]string `yaml:"headers"`
 	Body    interface{}       `yaml:"body"`
 }
@@ -111,6 +113,8 @@ func (s *HttpServer) initRoutes() {
 			s.router.DELETE(r.Uri, uriHandler(r.Response))
 		case "PUT":
 			s.router.PUT(r.Uri, uriHandler(r.Response))
+		case "PATCH":
+			s.router.PATCH(r.Uri, uriHandler(r.Response))
 		case "OPTIONS":
 			s.router.OPTIONS(r.Uri, uriHandler(r.Response))
 		default:
@@ -141,6 +145,11 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 				return
 			}
 			bodyString = string(jsonBytes)
+		}
+
+		// handle delay
+		if response.Delay > 0 {
+			time.Sleep(time.Duration(response.Delay) * time.Millisecond)
 		}
 
 		// write status code
