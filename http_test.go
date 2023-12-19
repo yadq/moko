@@ -126,3 +126,20 @@ func TestHTTPSServer(t *testing.T) {
 		So(string(body), ShouldEqual, "hello world")
 	})
 }
+
+func TestNormalizeTpl(t *testing.T) {
+	Convey("no tpl usage", t, func() {
+		So(normalizeTpl("hello world"), ShouldEqual, "hello world")
+		So(normalizeTpl(`{"name": "hello world"}`), ShouldEqual, `{"name": "hello world"}`)
+	})
+
+	Convey("go tpl usage", t, func() {
+		So(normalizeTpl("hello {{.name}}"), ShouldEqual, "hello {{.name}}")
+		So(normalizeTpl(`{"name": "hello {{.name}}"}`), ShouldEqual, `{"name": "hello {{.name}}"}`)
+	})
+
+	Convey("shell tpl usage", t, func() {
+		So(normalizeTpl("hello ${name}"), ShouldEqual, "hello {{.name}}")
+		So(normalizeTpl(`{"name": "hello ${name}"}`), ShouldEqual, `{"name": "hello {{.name}}"}`)
+	})
+}

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -34,11 +35,12 @@ const (
 )
 
 type HttpServer struct {
+	Routes   []*httpRoute `yaml:"routes"`
 	Port     int          `yaml:"port"`
 	CertFile string       `yaml:"cert"`
 	KeyFile  string       `yaml:"key"`
-	Routes   []*httpRoute `yaml:"routes"`
-	router   *httprouter.Router
+
+	router *httprouter.Router
 }
 
 type httpRoute struct {
@@ -126,6 +128,7 @@ func (s *HttpServer) initRoutes() {
 func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		for k, v := range response.Headers {
+			// TODO: render header key and value with template string
 			w.Header().Set(k, v)
 		}
 
@@ -139,7 +142,6 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 			w.Header().Set("Content-Type", "application/json")
 			jsonBytes, err := MarshalJSON(response.Body)
 			if err != nil {
-				bodyString = string(jsonBytes)
 				log.Printf("marshal response json error: %v\n", err)
 				fmt.Fprint(w, err.Error())
 				return
@@ -189,7 +191,7 @@ func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (str
 		}
 	}
 	// render template
-	tpl, err := template.New("response").Parse(body)
+	tpl, err := template.New("response").Parse(normalizeTpl(body))
 	if err != nil {
 		return body, err
 	}
@@ -199,6 +201,13 @@ func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (str
 	}
 
 	return buf.String(), nil
+}
+
+var tplPattern = regexp.MustCompile(`\$\{([^${}]+)\}`)
+
+// replace ${var} => {{.var}}
+func normalizeTpl(tplString string) string {
+	return tplPattern.ReplaceAllString(tplString, `{{.$1}}`)
 }
 
 func (s *HttpServer) Serve() error {
