@@ -127,9 +127,25 @@ func (s *HttpServer) initRoutes() {
 
 func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		params, err := getRequestParams(r, ps)
+		if err != nil {
+			// XXX: no return but log error
+			log.Printf("read request params error: %v\n", err)
+		}
+
+		// write response headers
 		for k, v := range response.Headers {
-			// TODO: render header key and value with template string
-			w.Header().Set(k, v)
+			rk, err := renderString(k, params)
+			if err != nil {
+				log.Printf("render header key %s error: %v\n", k, err)
+				continue
+			}
+			rv, err := renderString(v, params)
+			if err != nil {
+				log.Printf("render header value %s error: %v\n", v, err)
+				continue
+			}
+			w.Header().Set(rk, rv)
 		}
 
 		var bodyString string
@@ -157,7 +173,7 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		// write status code
 		w.WriteHeader(response.Code)
 		// render template
-		renderedBody, err := renderResponseBody(bodyString, r, ps)
+		renderedBody, err := renderString(bodyString, params)
 		if err != nil {
 			log.Printf("render response template error: %v\n", err)
 			fmt.Fprint(w, bodyString)
@@ -167,11 +183,7 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 	}
 }
 
-func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (string, error) {
-	if !strings.ContainsRune(body, '{') {
-		return body, nil
-	}
-
+func getRequestParams(r *http.Request, ps httprouter.Params) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
 	// render path variable
 	for _, p := range ps {
@@ -179,7 +191,7 @@ func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (str
 	}
 	// parse URL query and form-data
 	if err := r.ParseForm(); err != nil {
-		return body, err
+		return params, err
 	}
 	for qk := range r.Form {
 		params[qk] = r.Form.Get(qk)
@@ -187,11 +199,22 @@ func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (str
 	// parse json data
 	if r.Header.Get("Content-Type") == "application/json" {
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			return body, err
+			return params, err
 		}
 	}
+
+	return params, nil
+}
+
+var tplPattern = regexp.MustCompile(`\$\{([^${}]+)\}`) // match ${}
+
+func renderString(body string, params map[string]interface{}) (string, error) {
+	if !strings.ContainsRune(body, '{') || !strings.ContainsRune(body, '}') {
+		return body, nil
+	}
 	// render template
-	tpl, err := template.New("response").Parse(normalizeTpl(body))
+	// replace ${var} => {{.var}}
+	tpl, err := template.New("response").Parse(tplPattern.ReplaceAllString(body, `{{.$1}}`))
 	if err != nil {
 		return body, err
 	}
@@ -201,13 +224,6 @@ func renderResponseBody(body string, r *http.Request, ps httprouter.Params) (str
 	}
 
 	return buf.String(), nil
-}
-
-var tplPattern = regexp.MustCompile(`\$\{([^${}]+)\}`)
-
-// replace ${var} => {{.var}}
-func normalizeTpl(tplString string) string {
-	return tplPattern.ReplaceAllString(tplString, `{{.$1}}`)
 }
 
 func (s *HttpServer) Serve() error {

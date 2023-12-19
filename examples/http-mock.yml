@@ -42,3 +42,10 @@ routes:
       delay: 1
       body:
         success: true
+  - uri: /header/:name
+    method: GET
+    response:
+      headers:
+        user-name: ${name}
+      body:
+        success: true

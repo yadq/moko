@@ -101,6 +101,12 @@ func TestHTTPServer(t *testing.T) {
 		body, _ := io.ReadAll(resp.Body)
 		So(string(body), ShouldEqual, "{\"success\":true}")
 	})
+
+	Convey("mock return dynamic headers", t, func() {
+		resp := doHTTPRequest("GET", "/header/abc", nil, nil)
+		So(resp.StatusCode, ShouldEqual, 200)
+		So(resp.Header.Get("user-name"), ShouldEqual, "abc")
+	})
 }
 
 func TestHTTPSServer(t *testing.T) {
@@ -127,19 +133,35 @@ func TestHTTPSServer(t *testing.T) {
 	})
 }
 
-func TestNormalizeTpl(t *testing.T) {
+func TestRenderString(t *testing.T) {
+	params := map[string]interface{}{
+		"name": "world",
+	}
+
 	Convey("no tpl usage", t, func() {
-		So(normalizeTpl("hello world"), ShouldEqual, "hello world")
-		So(normalizeTpl(`{"name": "hello world"}`), ShouldEqual, `{"name": "hello world"}`)
+		data, err := renderString("hello world", params)
+		So(err, ShouldBeNil)
+		So(data, ShouldEqual, "hello world")
+		data, err = renderString(`{"name": "hello world"}`, params)
+		So(err, ShouldBeNil)
+		So(data, ShouldEqual, `{"name": "hello world"}`)
 	})
 
 	Convey("go tpl usage", t, func() {
-		So(normalizeTpl("hello {{.name}}"), ShouldEqual, "hello {{.name}}")
-		So(normalizeTpl(`{"name": "hello {{.name}}"}`), ShouldEqual, `{"name": "hello {{.name}}"}`)
+		data, err := renderString("hello {{.name}}", params)
+		So(err, ShouldBeNil)
+		So(data, ShouldEqual, "hello world")
+		data, err = renderString(`{"name": "hello {{.name}}"}`, params)
+		So(err, ShouldBeNil)
+		So(data, ShouldEqual, `{"name": "hello world"}`)
 	})
 
 	Convey("shell tpl usage", t, func() {
-		So(normalizeTpl("hello ${name}"), ShouldEqual, "hello {{.name}}")
-		So(normalizeTpl(`{"name": "hello ${name}"}`), ShouldEqual, `{"name": "hello {{.name}}"}`)
+		data, err := renderString("hello ${name}", params)
+		So(err, ShouldBeNil)
+		So(data, ShouldEqual, "hello world")
+		data, err = renderString(`{"name": "hello ${name}"}`, params)
+		So(err, ShouldBeNil)
+		So(data, ShouldEqual, `{"name": "hello world"}`)
 	})
 }
