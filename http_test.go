@@ -26,10 +26,8 @@ func TestHTTPServer(t *testing.T) {
 
 	doHTTPRequest := func(method string, uri string, data io.Reader, headers map[string]string) *http.Response {
 		req, _ := http.NewRequest(method, uri, data)
-		if headers != nil {
-			for k, v := range headers {
-				req.Header.Set(k, v)
-			}
+		for k, v := range headers {
+			req.Header.Set(k, v)
 		}
 		w := httptest.NewRecorder()
 		s.router.ServeHTTP(w, req)
