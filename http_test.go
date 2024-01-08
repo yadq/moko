@@ -30,7 +30,7 @@ func TestHTTPServer(t *testing.T) {
 			req.Header.Set(k, v)
 		}
 		w := httptest.NewRecorder()
-		s.router.ServeHTTP(w, req)
+		s.server.NewContext(req, w)
 
 		return w.Result()
 	}

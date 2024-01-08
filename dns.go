@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strings"
 
+	"github.com/labstack/gommon/log"
 	"github.com/miekg/dns"
 	"gopkg.in/yaml.v2"
 )
@@ -76,15 +76,15 @@ func (s *DNSServer) Init(cfgFile string) error {
 	}
 
 	if s.Protocol == "" {
-		log.Println("protocol is not set, use default protocol:", defaultDNSProtocol)
+		log.Infof("protocol is not set, use default protocol: %d", defaultDNSProtocol)
 		s.Protocol = defaultDNSProtocol
 	}
 	if s.Port == 0 {
-		log.Println("port is not set, use default port:", defaultDNSPort)
+		log.Info("port is not set, use default port: %d", defaultDNSPort)
 		s.Port = defaultDNSPort
 	}
 	if s.ParentDNS == "" {
-		log.Println("parentdns is not set, use default parent:", defaultParentDNS)
+		log.Info("parentdns is not set, use default parent: %s", defaultParentDNS)
 		s.ParentDNS = defaultParentDNS
 	}
 	s.server = &dns.Server{Addr: fmt.Sprintf(":%d", s.Port), Net: s.Protocol}
@@ -101,7 +101,7 @@ func (s *DNSServer) initRoutes() {
 		if !strings.HasSuffix(r.Fqdn, ".") {
 			r.Fqdn += "."
 		}
-		log.Println("add mock DNS:", r.Rrtype, r.Fqdn)
+		log.Infof("add mock DNS: %s %s", r.Rrtype, r.Fqdn)
 		switch r.Rrtype {
 		case "A":
 			ips := strings.Split(r.Ip, ",")
@@ -109,7 +109,7 @@ func (s *DNSServer) initRoutes() {
 			for idx, ip := range ips {
 				realIp := net.ParseIP(ip)
 				if realIp == nil {
-					log.Fatalln("invalid ip addr:", ip)
+					log.Fatalf("invalid ip addr: %s", ip)
 				}
 				rrs[idx] = &dns.A{
 					Hdr: dns.RR_Header{
@@ -123,9 +123,9 @@ func (s *DNSServer) initRoutes() {
 			}
 			s.m.Set(dns.TypeA, r.Fqdn, rrs)
 		case "CNAME":
-			log.Fatalln("CNAME is not supported yet")
+			log.Fatal("CNAME is not supported yet")
 		default:
-			log.Fatalln("unsupported DNS type: ", r.Rrtype)
+			log.Fatalf("unsupported DNS type: %s", r.Rrtype)
 		}
 	}
 }
@@ -135,16 +135,16 @@ func (s *DNSServer) Serve() error {
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		rrs, err := s.m.Get(r.Question[0].Qtype, r.Question[0].Name)
 		if err != nil {
-			log.Println("handle request error:", r, err)
-			log.Printf("forward request %s to parent DNS\n", r.Question[0].Name)
+			log.Errorf("handle request %s error: %v", r, err)
+			log.Printf("forward request %s to parent DNS", r.Question[0].Name)
 			resp, _, err := dnsClient.Exchange(r, s.ParentDNS)
 			if err != nil {
-				log.Println("forward parent DNS", w.RemoteAddr(), r.Question[0].Name, err)
+				log.Warnf("forward parent DNS %s %s, error: %v", w.RemoteAddr(), r.Question[0].Name, err)
 				dns.HandleFailed(w, r)
 				return
 			}
 			if err = w.WriteMsg(resp); err != nil {
-				log.Println("write response msg error:", err)
+				log.Errorf("write response msg error: %v", err)
 			}
 			return
 		}

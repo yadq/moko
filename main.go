@@ -3,10 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+
+	"github.com/labstack/gommon/log"
 )
+
+func init() {
+	log.SetHeader("${time_rfc3339} ${level}")
+}
 
 func main() {
 	var cfgFile, protocol string
