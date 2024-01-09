@@ -105,20 +105,8 @@ func (s *HttpServer) initRoutes() {
 	for _, r := range s.Routes {
 		slog.Infof("add mock HTTP API: %s %s", r.Method, r.Uri)
 		switch r.Method {
-		case "GET":
-			s.router.GET(r.Uri, uriHandler(r.Response))
-		case "POST":
-			s.router.POST(r.Uri, uriHandler(r.Response))
-		case "HEAD":
-			s.router.HEAD(r.Uri, uriHandler(r.Response))
-		case "DELETE":
-			s.router.DELETE(r.Uri, uriHandler(r.Response))
-		case "PUT":
-			s.router.PUT(r.Uri, uriHandler(r.Response))
-		case "PATCH":
-			s.router.PATCH(r.Uri, uriHandler(r.Response))
-		case "OPTIONS":
-			s.router.OPTIONS(r.Uri, uriHandler(r.Response))
+		case "GET", "POST", "HEAD", "DELETE", "PUT", "PATCH", "OPTIONS":
+			s.router.Handle(r.Method, r.Uri, uriHandler(r.Response))
 		default:
 			slog.Warnf("Unsupported method %s", r.Method)
 		}
