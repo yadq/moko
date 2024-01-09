@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -41,6 +43,7 @@ type HttpServer struct {
 	KeyFile  string       `yaml:"key"`
 
 	router *httprouter.Router
+	server *http.Server
 }
 
 type httpRoute struct {
@@ -97,6 +100,9 @@ func (s *HttpServer) Init(cfgFile string) error {
 
 	// init routes
 	s.initRoutes()
+
+	// init server
+	s.server = &http.Server{Addr: fmt.Sprintf(":%d", s.Port), Handler: s.router}
 
 	return nil
 }
@@ -215,16 +221,24 @@ func renderString(body string, params map[string]interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func (s *HttpServer) Serve() error {
-	addr := fmt.Sprintf(":%d", s.Port)
+func (s *HttpServer) Serve(wg *sync.WaitGroup) error {
+	defer wg.Done()
 
 	if s.CertFile != "" && s.KeyFile != "" {
 		slog.Infof("with cert and key file configured, start HTTPS server on :%d", s.Port)
-		return http.ListenAndServeTLS(addr, s.CertFile, s.KeyFile, s.router)
+		return s.server.ListenAndServeTLS(s.CertFile, s.KeyFile)
 	}
 
 	slog.Infof("start HTTP server on :%d", s.Port)
-	return http.ListenAndServe(addr, s.router)
+	return s.server.ListenAndServe()
+}
+
+func (s *HttpServer) Shutdown() error {
+	slog.Infof("shutting down server on :%d", s.Port)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return s.server.Shutdown(ctx)
 }
 
 func init() {

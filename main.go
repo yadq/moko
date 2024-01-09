@@ -4,7 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"sync"
+	"syscall"
 
 	"github.com/gookit/slog"
 )
@@ -38,7 +41,17 @@ func main() {
 	if err = server.Init(cfgFile); err != nil {
 		slog.Fatal(err)
 	}
-	slog.Fatal(server.Serve())
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go server.Serve(&wg)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	s := <-sig
+	slog.Infof("signal (%s) received, stopping...", s)
+	server.Shutdown()
+	slog.Info("server shutdown")
+	wg.Wait()
 
 	// TODO: watch cfg file and reload server
 }

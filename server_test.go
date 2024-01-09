@@ -1,9 +1,11 @@
 package main
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"sort"
+	"sync"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type mockServer struct{}
@@ -12,7 +14,13 @@ func (s *mockServer) Init(cfgFile string) error {
 	return nil
 }
 
-func (s *mockServer) Serve() error {
+func (s *mockServer) Serve(wg *sync.WaitGroup) error {
+	defer wg.Done()
+
+	return nil
+}
+
+func (s *mockServer) Shutdown() error {
 	return nil
 }
 

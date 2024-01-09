@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/miekg/dns"
@@ -10,7 +11,8 @@ import (
 func TestDNSServer(t *testing.T) {
 	s := newDNSServer()
 	s.Init("examples/dns-mock.yml")
-	go s.Serve()
+	var wg sync.WaitGroup
+	go s.Serve(&wg)
 	client := dns.Client{Net: "udp4"}
 
 	Convey("parse cfg file", t, func() {

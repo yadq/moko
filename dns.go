@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/gookit/slog"
 	"github.com/miekg/dns"
@@ -130,7 +131,9 @@ func (s *DNSServer) initRoutes() {
 	}
 }
 
-func (s *DNSServer) Serve() error {
+func (s *DNSServer) Serve(wg *sync.WaitGroup) error {
+	defer wg.Done()
+
 	// hijack all dns requests
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		rrs, err := s.m.Get(r.Question[0].Qtype, r.Question[0].Name)
@@ -157,6 +160,10 @@ func (s *DNSServer) Serve() error {
 	})
 
 	return s.server.ListenAndServe()
+}
+
+func (s *DNSServer) Shutdown() error {
+	return s.server.Shutdown()
 }
 
 func init() {

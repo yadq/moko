@@ -2,13 +2,15 @@ package main
 
 import (
 	"errors"
+	"sync"
 )
 
 var ServerMap = serverMap{} // global server map
 
 type Server interface {
 	Init(cfgFile string) error
-	Serve() error
+	Serve(*sync.WaitGroup) error
+	Shutdown() error
 }
 
 type serverMap map[string]Server
