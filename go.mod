@@ -3,6 +3,7 @@ module moko
 go 1.18
 
 require (
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gookit/slog v0.5.4
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/miekg/dns v1.1.57

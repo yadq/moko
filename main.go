@@ -50,8 +50,6 @@ func main() {
 	s := <-sig
 	slog.Infof("signal (%s) received, stopping...", s)
 	server.Shutdown()
-	slog.Info("server shutdown")
 	wg.Wait()
-
-	// TODO: watch cfg file and reload server
+	slog.Info("server shutdown")
 }
