@@ -8,7 +8,7 @@ import (
 
 	"github.com/gookit/slog"
 	"github.com/miekg/dns"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // dns-mock.yaml example
