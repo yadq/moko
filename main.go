@@ -3,13 +3,20 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+
+	"github.com/gookit/slog"
 )
 
 func main() {
 	var cfgFile, protocol string
+
+	slog.Configure(func(logger *slog.SugaredLogger) {
+		f := logger.Formatter.(*slog.TextFormatter)
+		f.EnableColor = true
+		f.SetTemplate("[{{datetime}}] [{{level}}] {{message}}\n")
+	})
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: moko -protocol <%v> -cfg <cfg yaml file>\n", strings.Join(ServerMap.List(), ", "))
@@ -20,18 +27,18 @@ func main() {
 	flag.Parse()
 
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-		log.Fatalf("cfg file %v does not exist", cfgFile)
+		slog.Fatalf("cfg file %v does not exist", cfgFile)
 	}
 
 	server, err := ServerMap.Get(protocol)
 	if err != nil {
-		log.Fatal(err.Error())
+		slog.Fatal(err.Error())
 	}
 
 	if err = server.Init(cfgFile); err != nil {
-		log.Fatal(err)
+		slog.Fatal(err)
 	}
-	log.Fatal(server.Serve())
+	slog.Fatal(server.Serve())
 
 	// TODO: watch cfg file and reload server
 }

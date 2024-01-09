@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -13,6 +12,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gookit/slog"
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/yaml.v2"
 )
@@ -103,7 +103,7 @@ func (s *HttpServer) Init(cfgFile string) error {
 
 func (s *HttpServer) initRoutes() {
 	for _, r := range s.Routes {
-		log.Printf("add mock HTTP API: %v %v\n", r.Method, r.Uri)
+		slog.Infof("add mock HTTP API: %s %s", r.Method, r.Uri)
 		switch r.Method {
 		case "GET":
 			s.router.GET(r.Uri, uriHandler(r.Response))
@@ -120,7 +120,7 @@ func (s *HttpServer) initRoutes() {
 		case "OPTIONS":
 			s.router.OPTIONS(r.Uri, uriHandler(r.Response))
 		default:
-			log.Printf("Unsupported method %v", r.Method)
+			slog.Warnf("Unsupported method %s", r.Method)
 		}
 	}
 }
@@ -129,20 +129,21 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		params, err := getRequestParams(r, ps)
 		if err != nil {
-			// XXX: no return but log error
-			log.Printf("read request params error: %v\n", err)
+			// NOTE: no return but log error
+			slog.Errorf("read request params error: %v", err)
+			w.Header().Set("Moko-Error", err.Error())
 		}
 
 		// write response headers
 		for k, v := range response.Headers {
 			rk, err := renderString(k, params)
 			if err != nil {
-				log.Printf("render header key %s error: %v\n", k, err)
+				slog.Errorf("render header key %s error: %v", k, err)
 				continue
 			}
 			rv, err := renderString(v, params)
 			if err != nil {
-				log.Printf("render header value %s error: %v\n", v, err)
+				slog.Errorf("render header value %s error: %v", v, err)
 				continue
 			}
 			w.Header().Set(rk, rv)
@@ -158,7 +159,7 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 			w.Header().Set("Content-Type", "application/json")
 			jsonBytes, err := MarshalJSON(response.Body)
 			if err != nil {
-				log.Printf("marshal response json error: %v\n", err)
+				slog.Errorf("marshal response json error: %v", err)
 				fmt.Fprint(w, err.Error())
 				return
 			}
@@ -175,7 +176,7 @@ func uriHandler(response *httpResponse) httprouter.Handle {
 		// render template
 		renderedBody, err := renderString(bodyString, params)
 		if err != nil {
-			log.Printf("render response template error: %v\n", err)
+			slog.Errorf("render response template error: %v", err)
 			fmt.Fprint(w, bodyString)
 			return
 		}
@@ -230,11 +231,11 @@ func (s *HttpServer) Serve() error {
 	addr := fmt.Sprintf(":%d", s.Port)
 
 	if s.CertFile != "" && s.KeyFile != "" {
-		log.Printf("with cert and key file configured, start HTTPS server on :%d\n", s.Port)
+		slog.Infof("with cert and key file configured, start HTTPS server on :%d", s.Port)
 		return http.ListenAndServeTLS(addr, s.CertFile, s.KeyFile, s.router)
 	}
 
-	log.Printf("start HTTP server on :%d\n", s.Port)
+	slog.Infof("start HTTP server on :%d", s.Port)
 	return http.ListenAndServe(addr, s.router)
 }
 
