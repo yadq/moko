@@ -65,8 +65,7 @@ func newHttpServer() *HttpServer {
 }
 
 func (s *HttpServer) Init(cfgFile string) error {
-	err := s.loadConfig(cfgFile)
-	if err != nil {
+	if err := s.loadConfig(cfgFile); err != nil {
 		return err
 	}
 

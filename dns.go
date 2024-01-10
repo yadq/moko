@@ -52,8 +52,10 @@ type DNSServer struct {
 	Port      int       `yaml:"port"`
 	ParentDNS string    `yaml:"parent"`
 	Routes    []*Record `yaml:"routes"`
-	server    *dns.Server
-	m         dnsMap
+
+	server *dns.Server
+	m      dnsMap
+	w      *FileWatcher
 }
 
 type Record struct {
@@ -68,6 +70,32 @@ func newDNSServer() *DNSServer {
 }
 
 func (s *DNSServer) Init(cfgFile string) error {
+	if err := s.loadConfig(cfgFile); err != nil {
+		return err
+	}
+	s.server = &dns.Server{Addr: fmt.Sprintf(":%d", s.Port), Net: s.Protocol}
+
+	// init routes (in memory)
+	s.initRoutes()
+
+	// add config watcher and hot reload
+	s.w = NewFileWatcher()
+	s.w.Watch(cfgFile, func() error {
+		err := s.loadConfig(cfgFile)
+		if err != nil {
+			return err
+		}
+		s.m = dnsMap{}
+		s.initRoutes()
+		slog.Warn("only routes and parentdns will be auto reloaded when config update")
+
+		return nil
+	})
+
+	return nil
+}
+
+func (s *DNSServer) loadConfig(cfgFile string) error {
 	data, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return err
@@ -88,10 +116,6 @@ func (s *DNSServer) Init(cfgFile string) error {
 		slog.Warnf("parentdns is not set, use default parent: %s", defaultParentDNS)
 		s.ParentDNS = defaultParentDNS
 	}
-	s.server = &dns.Server{Addr: fmt.Sprintf(":%d", s.Port), Net: s.Protocol}
-
-	// init routes (in memory)
-	s.initRoutes()
 
 	return nil
 }
@@ -102,7 +126,7 @@ func (s *DNSServer) initRoutes() {
 		if !strings.HasSuffix(r.Fqdn, ".") {
 			r.Fqdn += "."
 		}
-		slog.Infof("add mock DNS:", r.Rrtype, r.Fqdn)
+		slog.Infof("add mock DNS: %s %s", r.Rrtype, r.Fqdn)
 		switch r.Rrtype {
 		case "A":
 			ips := strings.Split(r.Ip, ",")
@@ -138,7 +162,7 @@ func (s *DNSServer) Serve(wg *sync.WaitGroup) error {
 	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		rrs, err := s.m.Get(r.Question[0].Qtype, r.Question[0].Name)
 		if err != nil {
-			slog.Errorf("handle request %v error: %v", r, err)
+			slog.Warnf("handle request %v error: %v", r.Question[0], err)
 			slog.Warnf("forward request %s to parent DNS", r.Question[0].Name)
 			resp, _, err := dnsClient.Exchange(r, s.ParentDNS)
 			if err != nil {
