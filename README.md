@@ -10,7 +10,7 @@
 
 General:
 
-* [ ] Support reload configuration file on fly.
+* [x] Support reload configuration file on fly.
 * [ ] Support capturing protocol data.
 * [ ] Support call data generation method.
 * [ ] Support define and call functions in specified (JavaScript) files.
@@ -20,7 +20,7 @@ HTTP protocol:
 * [x] Support HTTPS protocol.
 * [x] Support HTTP/2 protocol.
 * [x] Support simulate delayed response.
-* [ ] Support mock cfg for specified Host.
+* [ ] Support mock for specified Host.
 * [ ] Add special header to mock response, eg. "mock-by: moko"
 * [ ] Implement `request` keyword, that support advanced route based on header, cookie etc.
 * [ ] Implement `oneof` keyword in response, that support random or weighted response.

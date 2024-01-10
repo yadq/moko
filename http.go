@@ -37,13 +37,14 @@ const (
 )
 
 type HttpServer struct {
-	Routes   []*httpRoute `yaml:"routes"`
+	Routes   []*httpRoute `yaml:"routes"` // NOTE: only routes will be hot reloaded
 	Port     int          `yaml:"port"`
 	CertFile string       `yaml:"cert"`
 	KeyFile  string       `yaml:"key"`
 
 	router *httprouter.Router
 	server *http.Server
+	w      *FileWatcher
 }
 
 type httpRoute struct {
@@ -64,8 +65,40 @@ func newHttpServer() *HttpServer {
 }
 
 func (s *HttpServer) Init(cfgFile string) error {
+	err := s.loadConfig(cfgFile)
+	if err != nil {
+		return err
+	}
+
+	// init routes
+	s.initRoutes()
+
+	// init server
+	s.server = &http.Server{Addr: fmt.Sprintf(":%d", s.Port), Handler: s.router}
+
+	// add config watcher and hot reload
+	s.w = NewFileWatcher()
+	s.w.Watch(cfgFile, func() error {
+		err := s.loadConfig(cfgFile)
+		if err != nil {
+			return err
+		}
+		s.router = httprouter.New() // reset router
+		s.initRoutes()
+		s.server.Handler = s.router
+		slog.Warn("only routes will be auto reloaded when config update")
+
+		return nil
+	})
+
+	return nil
+}
+
+func (s *HttpServer) loadConfig(cfgFile string) error {
 	data, err := os.ReadFile(cfgFile)
 	if err != nil {
+		dir, _ := os.Getwd()
+		slog.Errorf("read file error: %v, current path: %s", err, dir)
 		return err
 	}
 	if err := yaml.Unmarshal(data, s); err != nil {
@@ -97,12 +130,6 @@ func (s *HttpServer) Init(cfgFile string) error {
 			r.Response.Code = defaultHTTPCode
 		}
 	}
-
-	// init routes
-	s.initRoutes()
-
-	// init server
-	s.server = &http.Server{Addr: fmt.Sprintf(":%d", s.Port), Handler: s.router}
 
 	return nil
 }
@@ -235,6 +262,7 @@ func (s *HttpServer) Serve(wg *sync.WaitGroup) error {
 
 func (s *HttpServer) Shutdown() error {
 	slog.Infof("shutting down server on :%d", s.Port)
+	s.w.Stop()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
